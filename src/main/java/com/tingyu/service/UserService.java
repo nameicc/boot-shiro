@@ -29,6 +29,7 @@ public class UserService {
 
     public List<String> getUserPermissions(Integer id){
         List<String> permissions = new ArrayList<>();
+        permissions.add("user:query");
         return permissions;
     }
 
