@@ -4,7 +4,10 @@ import org.apache.shiro.mgt.SecurityManager;
 import org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor;
 import org.apache.shiro.spring.web.ShiroFilterFactoryBean;
 import org.apache.shiro.web.mgt.DefaultWebSecurityManager;
+import org.apache.shiro.web.servlet.SimpleCookie;
+import org.apache.shiro.web.session.mgt.DefaultWebSessionManager;
 import org.springframework.aop.framework.autoproxy.DefaultAdvisorAutoProxyCreator;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -14,11 +17,15 @@ import java.util.Map;
 @Configuration
 public class ShiroConfig {
 
+    @Value("${session.redis.expireTime}")
+    private long expireTime;
+
     @Bean
-    public SecurityManager securityManager(UserAuthorizingRealm userAuthorizingRealm){
+    public SecurityManager securityManager(UserAuthorizingRealm userAuthorizingRealm, DefaultWebSessionManager defaultWebSessionManager){
         DefaultWebSecurityManager securityManager = new DefaultWebSecurityManager();
         securityManager.setRealm(userAuthorizingRealm);
         securityManager.setRememberMeManager(null);
+        securityManager.setSessionManager(defaultWebSessionManager);
         return securityManager;
     }
 
@@ -57,6 +64,24 @@ public class ShiroConfig {
         AuthorizationAttributeSourceAdvisor authorizationAttributeSourceAdvisor = new AuthorizationAttributeSourceAdvisor();
         authorizationAttributeSourceAdvisor.setSecurityManager(securityManager);
         return authorizationAttributeSourceAdvisor;
+    }
+
+    /**
+     * @Author shichuanfeng
+     * @Description 定义Session交由Redis管理
+     * @Date 2021/8/25 16:33
+     * @Param [redisSessionDAO]
+     **/
+    @Bean
+    public DefaultWebSessionManager defaultWebSessionManager(RedisSessionDAO redisSessionDAO){
+        DefaultWebSessionManager defaultWebSessionManager = new DefaultWebSessionManager();
+        defaultWebSessionManager.setGlobalSessionTimeout(expireTime * 1000);
+        defaultWebSessionManager.setDeleteInvalidSessions(true);
+        defaultWebSessionManager.setSessionDAO(redisSessionDAO);
+        defaultWebSessionManager.setSessionValidationSchedulerEnabled(true);
+        // 修改Cookie中的SessionId的key，默认为JSESSIONID，自定义名称
+        defaultWebSessionManager.setSessionIdCookie(new SimpleCookie("JSESSIONID"));
+        return defaultWebSessionManager;
     }
 
 }

@@ -4,3 +4,12 @@ server:
 spring:
   application:
     name: boot-shiro
+
+  redis:
+    host: localhost
+    port: 6379
+    password:
+
+session:
+  redis:
+    expireTime: 3600 # session过期时间
